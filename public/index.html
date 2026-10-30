@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Smart Street Light Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{color-scheme:dark;--bg:#0b1220;--panel:#151f32;--muted:#9eacc4;--yellow:#facc15;--blue:#60a5fa;--green:#34d399;--red:#fb7185}
+*{box-sizing:border-box}body{margin:0;padding:24px;font-family:Arial,sans-serif;background:var(--bg);color:#edf3ff}main{max-width:1100px;margin:auto}
+header{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:22px}h1{color:var(--yellow);margin:0 0 8px}p,.muted{color:var(--muted);margin:0}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.card{background:var(--panel);border:1px solid #26344b;border-radius:16px;padding:18px;margin-bottom:14px}
+.label{color:var(--muted);font-size:.9rem;margin-bottom:12px}.value{font-size:1.8rem;font-weight:bold}.green{color:var(--green)}.yellow{color:var(--yellow)}.red{color:var(--red)}
+.charts{display:grid;grid-template-columns:2fr 1fr;gap:14px}.chart{height:290px;position:relative}.pill{background:#202d44;border-radius:99px;padding:9px 13px}
+.tablewrap{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:540px}td,th{text-align:left;padding:11px;border-bottom:1px solid #2a3850}th{color:var(--muted)}
+@media(max-width:800px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.charts{grid-template-columns:1fr}}@media(max-width:480px){body{padding:12px}.card{padding:13px}.value{font-size:1.4rem}}
+</style></head><body><main>
+<header><div><h1>💡 Smart Street Light</h1><p>ESP32 · LDR · Node.js · PostgreSQL</p></div><div id="connection" class="pill">Connecting…</div></header>
+<section class="grid">
+<div class="card"><div class="label">Ambient condition</div><div class="value" id="ambient">—</div></div>
+<div class="card"><div class="label">LED status</div><div class="value" id="led">—</div></div>
+<div class="card"><div class="label">LDR digital output</div><div class="value" id="ldr">—</div></div>
+<div class="card"><div class="label">Stored records</div><div class="value" id="records">0</div></div>
+</section>
+<section class="charts">
+<div class="card"><div class="label">LDR digital output history</div><div class="chart"><canvas id="sensorChart"></canvas></div></div>
+<div class="card"><div class="label">LED state distribution</div><div class="chart"><canvas id="ledChart"></canvas></div></div>
+</section>
+<section class="card"><div class="label">Latest database readings</div><div class="tablewrap"><table><thead><tr><th>Received</th><th>Device</th><th>LDR DO</th><th>Ambient</th><th>LED</th></tr></thead><tbody id="rows"><tr><td colspan="5">Waiting for readings…</td></tr></tbody></table></div></section>
+<p class="muted">Dashboard refreshes every 3 seconds. This version records the LDR digital output and LED status; it does not directly measure electrical power.</p>
+</main>
+<script>
+const common={responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{labels:{color:'#edf3ff'}}},scales:{x:{ticks:{color:'#9eacc4',maxTicksLimit:7},grid:{color:'#28364c'}},y:{ticks:{color:'#9eacc4'},grid:{color:'#28364c'}}}};
+const sensorChart=new Chart(document.getElementById('sensorChart'),{type:'line',data:{labels:[],datasets:[{label:'LDR DO',data:[],borderColor:'#60a5fa',backgroundColor:'#60a5fa33',fill:true,tension:.2,pointRadius:2}]},options:{...common,scales:{...common.scales,y:{min:0,max:1,ticks:{stepSize:1,color:'#9eacc4'},grid:{color:'#28364c'}}}}});
+const ledChart=new Chart(document.getElementById('ledChart'),{type:'doughnut',data:{labels:['LED ON','LED OFF'],datasets:[{data:[0,0],backgroundColor:['#facc15','#64748b'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#edf3ff'}}}}});
+function time(v){if(!v)return '—';const d=new Date(v);return Number.isNaN(d.getTime())?String(v):d.toLocaleString()}
+async function refresh(){
+ try{
+  const responses=await Promise.all([fetch('/api/readings/latest',{cache:'no-store'}),fetch('/api/readings?limit=50',{cache:'no-store'}),fetch('/api/summary',{cache:'no-store'})]);
+  if(responses.some(r=>!r.ok))throw Error('API unavailable');
+  const [latest,history,summary]=await Promise.all(responses.map(r=>r.json()));
+  const c=document.getElementById('connection');c.textContent='● Backend + PostgreSQL connected';c.className='pill green';
+  document.getElementById('records').textContent=summary.total_records;
+  document.getElementById('ambient').textContent=latest?latest.ambient:'Waiting';
+  const led=document.getElementById('led');led.textContent=latest?latest.led_status:'Waiting';led.className='value '+(latest&&latest.led_status==='ON'?'yellow':'');
+  document.getElementById('ldr').textContent=latest?latest.ldr_digital:'—';
+  sensorChart.data.labels=history.map(x=>time(x.received_at));sensorChart.data.datasets[0].data=history.map(x=>Number(x.ldr_digital));sensorChart.update('none');
+  const on=history.filter(x=>x.led_status==='ON').length;ledChart.data.datasets[0].data=[on,history.length-on];ledChart.update('none');
+  const tbody=document.getElementById('rows');tbody.replaceChildren();
+  history.slice().reverse().slice(0,10).forEach(x=>{const tr=document.createElement('tr');[time(x.received_at),x.device_id,x.ldr_digital,x.ambient,x.led_status].forEach(v=>{const td=document.createElement('td');td.textContent=String(v??'—');tr.appendChild(td)});tbody.appendChild(tr)});
+  if(!history.length)tbody.innerHTML='<tr><td colspan="5">No data yet. Start the ESP32 sender.</td></tr>';
+ }catch(e){const c=document.getElementById('connection');c.textContent='● Backend unavailable — retrying';c.className='pill red'}
+}
+refresh();setInterval(refresh,3000);
+</script></body></html>

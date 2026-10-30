@@ -1,0 +1,20 @@
+databases:
+  - name: streetlight-postgres
+    plan: free
+    databaseName: streetlight_db
+    user: streetlight_user
+
+services:
+  - type: web
+    name: esp32-smart-street-light
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 22.13.1
+      - key: DATABASE_URL
+        fromDatabase:
+          name: streetlight-postgres
+          property: connectionString
