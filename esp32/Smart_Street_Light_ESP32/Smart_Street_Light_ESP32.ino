@@ -4,15 +4,15 @@
 #include <WiFiClientSecure.h>
 
 // ========== WI-FI SETTINGS ==========
-const char* ssid = "iQOO Neo9 Pro";
-const char* password = "12345678";
+const char* ssid = "REDMI 15C";
+const char* password = "qfvq1983";
 
 // ========== CLOUD BACKEND SETTINGS ==========
 // When hosted on Render, use your Render service URL with HTTPS:
 // Example: "https://your-service-name.onrender.com/api/readings"
 // If testing locally on your PC, use your local IP with HTTP:
 // Example: "http://192.168.40.165:3000/api/readings"
-const char* serverUrl = "https://YOUR-APP-NAME.onrender.com/api/readings";
+const char* serverUrl = "https://esp32-smart-street-light.onrender.com";
 const char* deviceId = "esp32_street_01";
 
 // Telemetry interval (milliseconds)
