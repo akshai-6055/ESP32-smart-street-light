@@ -132,7 +132,7 @@ The backend provides stateless REST endpoints adhering to standard HTTP status c
 | `/api/readings` | `GET` | Query param `?limit=50` | `200 OK` | Retrieves historical readings for time-series charts |
 | `/api/summary` | `GET` | None | `200 OK` | Retrieves aggregate metrics (total readings, LED ON count, LED OFF count) |
 
-### 4.3 Database Schema & Relational Design (`db.sql`)
+### 4.3 Database Schema & Relational Design (`postgres-init/db.sql`)
 The PostgreSQL database persists telemetry entries in a dedicated table named `sensor_readings`.
 
 ```sql
@@ -209,3 +209,4 @@ All primary criteria of the IoT project have been fulfilled:
 4. **Database Support**: Persistent PostgreSQL storage with indexing.
 5. **Real-Time Dashboard**: Interactive web UI with Chart.js visualization.
 6. **Testing & Documentation**: Comprehensive verification and documentation provided.
+

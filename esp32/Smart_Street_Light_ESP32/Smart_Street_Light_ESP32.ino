@@ -8,11 +8,11 @@ const char* ssid = "REDMI 15C";
 const char* password = "qfvq1983";
 
 // ========== CLOUD BACKEND SETTINGS ==========
-// When hosted on Render, use your Render service URL with HTTPS:
+// When hosted on Render, use your Render service URL:
 // Example: "https://your-service-name.onrender.com/api/readings"
 // If testing locally on your PC, use your local IP with HTTP:
 // Example: "http://192.168.40.165:3000/api/readings"
-const char* serverUrl = "https://esp32-smart-street-light.onrender.com";
+const char* serverUrl = "https://esp32-smart-street-light.onrender.com/api/readings";
 const char* deviceId = "esp32_street_01";
 
 // Telemetry interval (milliseconds)
@@ -61,18 +61,29 @@ void sendTelemetry() {
   payload += "\"led\":\"" + String(ledState ? "ON" : "OFF") + "\"";
   payload += "}";
 
+  // Ensure target URL points to /api/readings endpoint
+  String endpointUrl = String(serverUrl);
+  endpointUrl.trim();
+  if (!endpointUrl.endsWith("/api/readings")) {
+    if (endpointUrl.endsWith("/")) {
+      endpointUrl += "api/readings";
+    } else {
+      endpointUrl += "/api/readings";
+    }
+  }
+
   Serial.println("[Cloud] Sending payload: " + payload);
 
   HTTPClient http;
-  bool isHttps = String(serverUrl).startsWith("https://");
+  bool isHttps = endpointUrl.startsWith("https://");
 
   if (isHttps) {
     WiFiClientSecure secureClient;
     secureClient.setInsecure(); // Skip certificate verification for cloud endpoints
-    http.begin(secureClient, serverUrl);
+    http.begin(secureClient, endpointUrl);
   } else {
     WiFiClient plainClient;
-    http.begin(plainClient, serverUrl);
+    http.begin(plainClient, endpointUrl);
   }
 
   http.addHeader("Content-Type", "application/json");
@@ -81,7 +92,7 @@ void sendTelemetry() {
   int httpCode = http.POST(payload);
 
   if (httpCode > 0) {
-    Serial.printf("[Cloud] POST %s -> HTTP %d\n", serverUrl, httpCode);
+    Serial.printf("[Cloud] POST %s -> HTTP %d\n", endpointUrl.c_str(), httpCode);
     if (httpCode == 201) {
       Serial.println("[Cloud] Success! Reading recorded in database.");
     }
