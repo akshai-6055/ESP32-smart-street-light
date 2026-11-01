@@ -12,7 +12,7 @@ const char* password = "qfvq1983";
 // Example: "https://your-service-name.onrender.com/api/readings"
 // If testing locally on your PC, use your local IP with HTTP:
 // Example: "http://192.168.40.165:3000/api/readings"
-const char* serverUrl = "https://esp32-smart-street-light.onrender.com/api/readings";
+const char* serverUrl = "https://esp32-smart-street-light.onrender.com";
 const char* deviceId = "esp32_street_01";
 
 // Telemetry interval (milliseconds)
@@ -37,12 +37,26 @@ bool ledState = false;
 int sensorValue = HIGH;
 bool lastDarkState = false;
 unsigned long lastSendTime = 0;
+String cloudMode = "AUTOMATIC"; // AUTOMATIC, FORCE_ON, FORCE_OFF, EMERGENCY_STROBE
 
 // ========== READ SENSOR AND CONTROL LED ==========
 void updateStreetLight() {
   sensorValue = digitalRead(LDR_DO_PIN);
   isDark = (sensorValue == DARK_LEVEL);
-  ledState = isDark;
+
+  // Apply cloud override directives or fall back to automatic LDR sensing
+  if (cloudMode == "FORCE_ON") {
+    ledState = true;
+  } else if (cloudMode == "FORCE_OFF") {
+    ledState = false;
+  } else if (cloudMode == "EMERGENCY_STROBE") {
+    // High-visibility strobe flash every 150ms
+    ledState = (millis() / 150) % 2 == 0;
+  } else {
+    // AUTOMATIC: Local autonomous LDR sensing
+    ledState = isDark;
+  }
+
   digitalWrite(LED_PIN, ledState ? HIGH : LOW);
 }
 
@@ -95,6 +109,19 @@ void sendTelemetry() {
     Serial.printf("[Cloud] POST %s -> HTTP %d\n", endpointUrl.c_str(), httpCode);
     if (httpCode == 201) {
       Serial.println("[Cloud] Success! Reading recorded in database.");
+      String responseBody = http.getString();
+      if (responseBody.indexOf("\"mode\":\"FORCE_ON\"") >= 0) {
+        cloudMode = "FORCE_ON";
+        Serial.println("[Cloud Directive] Remote Override: FORCE ON");
+      } else if (responseBody.indexOf("\"mode\":\"FORCE_OFF\"") >= 0) {
+        cloudMode = "FORCE_OFF";
+        Serial.println("[Cloud Directive] Remote Override: FORCE OFF");
+      } else if (responseBody.indexOf("\"mode\":\"EMERGENCY_STROBE\"") >= 0) {
+        cloudMode = "EMERGENCY_STROBE";
+        Serial.println("[Cloud Directive] Remote Override: EMERGENCY STROBE");
+      } else if (responseBody.indexOf("\"mode\":\"AUTOMATIC\"") >= 0) {
+        cloudMode = "AUTOMATIC";
+      }
     }
   } else {
     Serial.printf("[Cloud] POST failed, error: %s\n", http.errorToString(httpCode).c_str());

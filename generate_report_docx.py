@@ -32,7 +32,6 @@ def create_report():
         for i, row in enumerate(table.rows):
             for cell in row.cells:
                 tcPr = cell._tc.get_or_add_tcPr()
-                # cell padding (margins)
                 tcMar = OxmlElement('w:tcMar')
                 topMar = OxmlElement('w:top')
                 topMar.set(qn('w:w'), '120')
@@ -132,7 +131,6 @@ def create_report():
         cell = tbl.cell(0, 0)
         set_cell_shading(cell, bg_color)
         
-        # Style borders: thick left border, none for others
         tcPr = cell._tc.get_or_add_tcPr()
         borders = parse_xml(f'''
             <w:tcBorders {nsdecls("w")}>
@@ -144,7 +142,6 @@ def create_report():
         ''')
         tcPr.append(borders)
         
-        # cell margins
         tcMar = parse_xml(f'''
             <w:tcMar {nsdecls("w")}>
                 <w:top w:w="160" w:type="dxa"/>
@@ -231,7 +228,7 @@ def create_report():
     p_sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p_sub.paragraph_format.space_before = Pt(0)
     p_sub.paragraph_format.space_after = Pt(20)
-    r_sub = p_sub.add_run("An IoT-Based Edge Sensing, Containerized Backend, and Real-Time Dashboard Prototype\n")
+    r_sub = p_sub.add_run("An IoT-Based Edge Sensing, Energy Analytics, Containerized Backend, and Real-Time Dashboard System\n")
     r_sub.font.bold = True
     r_sub.font.size = Pt(11)
     r_sub.font.color.rgb = COLOR_SECONDARY
@@ -244,42 +241,45 @@ def create_report():
     add_section_header("1. INTRODUCTION")
     add_body_p(
         "Street lighting is a fundamental municipal infrastructure service that provides illumination for public roads, "
-        "pedestrian pathways, and urban commercial centers, ensuring safety and visual convenience after dusk. However, "
-        "conventional street lighting infrastructures suffer from significant energy wastage, high operating costs, and reliance "
-        "on manual labor or rigid mechanical timers. Such legacy systems are incapable of adapting to actual ambient lighting "
-        "conditions (such as heavy overcast, rain, or seasonal variations) and frequently remain illuminated during bright daytime hours."
+        "pedestrian walkways, and urban centers, ensuring vehicular safety and visual security after dusk. However, "
+        "conventional street lighting infrastructures suffer from significant energy wastage, high operating expenditures, and "
+        "an unsustainable reliance on manual labor or rigid mechanical timers. Such legacy systems are incapable of adapting "
+        "to dynamic ambient lighting conditions (such as sudden overcast, rainstorms, or seasonal shifts) and frequently remain "
+        "illuminated during broad daylight hours, wasting valuable municipal power."
     )
     add_body_p(
         "To address this issue, this project proposes an IoT-based Smart Street Light Monitoring and Automation System that "
         "autonomously measures ambient light levels, controls street lighting in real time, and transmits operational telemetry "
-        "to a containerized cloud backend and database for centralized monitoring. The system integrates an ESP32 microcontroller "
-        "with a Light Dependent Resistor (LDR) optical sensor module and high-luminosity LED actuator. The telemetry data is "
-        "packaged into structured JSON format and transmitted over Wi-Fi via secure HTTPS to a containerized Node.js/Express "
+        "to a containerized cloud backend and database for centralized monitoring and energy analytics. The system integrates an "
+        "ESP32 microcontroller with a Light Dependent Resistor (LDR) optical sensor module and high-luminosity LED actuator. Telemetry "
+        "is packaged into structured JSON format and transmitted over Wi-Fi via secure HTTPS to a containerized Node.js/Express "
         "backend running in the cloud on Render, persisted in a managed PostgreSQL database, and visualized through a real-time web dashboard."
     )
     add_body_p(
-        "This solution offers an energy-efficient, robust, and scalable framework to automate municipal street lighting while "
-        "providing administrators with real-time visibility, automated historical logging, and reduced operational overhead."
+        "Beyond autonomous sensing, the enhanced system features live energy consumption calculations (kWh), monetary cost savings estimation (₹), "
+        "carbon footprint offset tracking (kg CO2 avoided), bi-directional remote cloud override controls (Auto, Force ON, Force OFF, SOS Strobe), "
+        "and one-click CSV telemetry audit export for municipal administrators."
     )
 
     # 2. AIM OF THE PROJECT
     add_section_header("2. AIM OF THE PROJECT")
     add_body_p(
-        "The main aim of this project is to design and implement an IoT-enabled smart street light automation and monitoring system "
-        "that continuously detects ambient light intensity, autonomously switches the street light LED ON during darkness and OFF "
-        "during daylight, transmits real-time telemetry to a containerized cloud backend, and enables municipal supervisors to "
-        "monitor system status and historical trends remotely via a web dashboard."
+        "The main aim of this project is to design and implement an IoT-enabled smart street light automation, energy analytics, "
+        "and remote monitoring system that continuously detects ambient light intensity, autonomously switches the street light LED ON during "
+        "darkness and OFF during daylight, transmits real-time telemetry to a containerized cloud backend, and enables municipal supervisors "
+        "to monitor energy metrics, execute remote override commands, and audit historical records remotely via an interactive web dashboard."
     )
 
     # 3. OBJECTIVES
     add_section_header("3. OBJECTIVES")
     add_bullet("To measure ambient light levels in real time using a Light Dependent Resistor (LDR) sensor module with LM393 comparator.")
-    add_bullet("To autonomously control the street light LED locally at the edge with near-zero latency, ensuring failsafe operation independent of internet connectivity.")
+    add_bullet("To autonomously actuate the street light LED locally at the edge with near-zero latency (<5ms), ensuring failsafe operation independent of internet connectivity.")
     add_bullet("To process sensor data and actuator states through an ESP32 microcontroller and transmit secure JSON telemetry over Wi-Fi via HTTPS.")
     add_bullet("To deploy a containerized Node.js/Express backend service using Docker and Render cloud infrastructure.")
     add_bullet("To persist all time-stamped sensor readings and lighting states in a scalable PostgreSQL relational database.")
-    add_bullet("To develop an interactive, real-time web dashboard featuring dynamic status cards, Chart.js time-series graphs, and telemetry history tables.")
-    add_bullet("To provide a cost-effective, low-power, and compact IoT hardware prototype suitable for municipal and commercial deployments.")
+    add_bullet("To compute real-time energy savings metrics, including total kWh consumed, percentage energy saved vs 24/7 baseline, monetary cost saved (₹), and CO2 emissions avoided (kg).")
+    add_bullet("To implement bi-directional cloud control allowing operators to remotely override street lights (Automatic, Force ON, Force OFF, Emergency SOS Strobe).")
+    add_bullet("To develop an interactive, real-time web dashboard featuring dynamic status cards, an animated glowing street light bulb widget, Chart.js time-series graphs, and one-click CSV audit report export.")
 
     # 4. EXISTING SYSTEM
     add_section_header("4. EXISTING SYSTEM")
@@ -292,13 +292,13 @@ def create_report():
     add_bullet("Astronomical or mechanical timer switches cannot adapt to sudden daylight changes caused by rain, clouds, or eclipses.")
     add_bullet("Significant electrical power wastage occurs when lights remain switched ON during daylight hours.")
     add_bullet("No real-time fault notifications, centralized telemetry, or remote observability.")
-    add_bullet("Lack of historical telemetry records and data analytics for municipal energy audits and predictive maintenance.")
+    add_bullet("Lack of historical telemetry records and automated data analytics for municipal energy audits and predictive maintenance.")
 
     # 5. PROPOSED SYSTEM
     add_section_header("5. PROPOSED SYSTEM")
     add_body_p(
-        "The proposed system introduces an IoT-based smart street light device and cloud infrastructure capable of measuring "
-        "ambient illumination accurately, switching light actuators automatically, and transmitting operational telemetry to a cloud server in real time."
+        "The proposed system introduces an intelligent IoT-based street lighting solution that couples autonomous edge actuation "
+        "with containerized cloud telemetry, real-time energy accounting, and bi-directional remote cloud management."
     )
     add_body_p(
         "The ESP32 microcontroller samples the digital output of an LDR sensor module. When ambient light drops below a preset "
@@ -307,8 +307,9 @@ def create_report():
         "ambient status ('Dark'/'Bright'), and LED status ('ON'/'OFF') to a containerized Node.js cloud server via HTTPS."
     )
     add_body_p(
-        "This design eliminates manual operational dependency, ensures instantaneous local switching, saves significant energy, "
-        "and provides a live, interactive web dashboard accessible from any internet-connected device."
+        "In response, the cloud server acknowledges ingestion and returns active remote override directives (Automatic, Force ON, Force OFF, "
+        "or Emergency SOS Strobe), which the ESP32 applies physically in real time. The web dashboard dynamically renders a realistic glowing "
+        "bulb fixture, calculates live economic and environmental savings, and offers one-click CSV export."
     )
 
     # 6. SYSTEM ARCHITECTURE
@@ -316,31 +317,31 @@ def create_report():
     add_body_p("The system architecture comprises two primary functional layers — the Device Layer (Edge) and the Cloud/Backend Layer.")
     
     add_sub_header("6.1 Hardware Components")
-    add_bullet("ESP32 DevKit V1: 32-bit dual-core microcontroller with integrated 2.4 GHz Wi-Fi (802.11 b/g/n) for edge computation and secure HTTPS communication.")
+    add_bullet("ESP32 DevKit V1: 32-bit dual-core microcontroller with integrated 2.4 GHz Wi-Fi (802.11 b/g/n) for edge computation, local actuation, and secure HTTPS communication.")
     add_bullet("LDR Optical Sensor Module: Photoresistor circuit integrated with an LM393 comparator providing sensitivity adjustment and digital threshold output (DO).")
-    add_bullet("Street Light LED Actuator: High-luminosity 5mm white LED simulating the street lamp fixture, driven via GPIO 2 with a 220Ω current-limiting resistor.")
+    add_bullet("Street Light LED Actuator: High-luminosity 5mm white LED simulating the street lamp fixture, driven via GPIO 2 with a 220Ω current-limiting resistor (or coupled to an AC relay for household bulbs).")
     add_bullet("Prototyping Breadboard: Sturdy base board providing secure physical mounting and circuit wiring for components.")
     add_bullet("Jumper Wires: High-grade Dupont jumper wires (Male-to-Male, Male-to-Female) for breadboard pin interconnects.")
     add_bullet("Power Supply (5V): Standard 5V 1A Micro-USB adapter powering the ESP32 and peripheral sensors.")
 
     add_sub_header("6.2 Software Components")
     add_bullet("Arduino IDE 2.x: Integrated development environment used to program, configure, compile, and flash firmware to the ESP32 microcontroller.")
-    add_bullet("Node.js & Express (Backend): RESTful web service handling telemetry ingestion (`/api/readings`), health checks, and summary statistics.")
+    add_bullet("Node.js & Express (Backend): RESTful web service handling telemetry ingestion (`/api/readings`), health checks, energy summary (`/api/summary`), remote control (`/api/control`), and CSV export (`/api/export/csv`).")
     add_bullet("PostgreSQL Database: Production-ready relational database storing time-stamped telemetry with composite indexes (`(device_id, received_at)`).")
-    add_bullet("Dashboard Interface: Modern web frontend built with HTML5, CSS3 Grid, and Chart.js for real-time data plotting and telemetry inspection.")
+    add_bullet("Dashboard Interface: Modern web frontend built with HTML5, CSS3 Grid, Chart.js, and an animated SVG street light bulb widget.")
     add_bullet("Docker & Docker Compose: Containerization engine packaging the Node.js application (`node:22-alpine`) and local PostgreSQL database.")
-    add_bullet("Render Cloud Platform: Cloud PaaS used for hosting the web service and managed cloud PostgreSQL instance via Render Blueprint (`render.yaml`).")
+    add_bullet("Render Cloud Platform: Cloud PaaS hosting the web service and managed cloud PostgreSQL instance via Render Blueprint (`render.yaml`).")
 
     # 7. WORKING PRINCIPLE
     add_section_header("7. WORKING PRINCIPLE")
-    add_body_p("The operational workflow follows seven coordinated steps across edge sensing, local control, and cloud telemetry:")
+    add_body_p("The operational workflow follows seven coordinated steps across edge sensing, local control, cloud telemetry, and remote management:")
     add_bullet("Step 1 (Initialization): Upon power-on, the ESP32 initializes GPIO pin modes (GPIO 2 as OUTPUT, GPIO 27 as INPUT), connects to the local Wi-Fi network, and initiates an immediate diagnostic sensor scan.")
     add_bullet("Step 2 (Data Acquisition): The LDR sensor module continuously monitors ambient illumination. The onboard LM393 comparator compares the analog resistance against a calibrated potentiometer threshold and outputs a clean digital logic level.")
     add_bullet("Step 3 (Immediate Local Control): The ESP32 evaluates the digital logic signal. If darkness is detected (`DO == HIGH`), the LED is activated immediately (`GPIO 2 = HIGH`); if bright daylight is detected, the LED is turned OFF. This occurs in <5ms without network dependency.")
     add_bullet("Step 4 (Event & Periodic Telemetry): When a change in lighting state is detected or when the 5-second periodic timer expires, a cloud telemetry dispatch is triggered.")
-    add_bullet("Step 5 (Secure Cloud Transmission): The ESP32 formats a JSON payload: `{\"device_id\":\"esp32_street_01\", \"sensor\":1, \"ambient\":\"Dark\", \"led\":\"ON\"}` and dispatches it over Wi-Fi via `HTTPS POST` to the Render cloud backend using TLS encryption.")
-    add_bullet("Step 6 (Data Persistence): The Node.js Express backend validates the payload structure and inserts a new record into the PostgreSQL `sensor_readings` table with an automatic UTC timestamp.")
-    add_bullet("Step 7 (Live Dashboard Monitoring): The web dashboard polls the backend REST APIs every 3 seconds, dynamically updating the status cards, Chart.js time-series line chart, doughnut state distribution, and the database log table.")
+    add_bullet("Step 5 (Secure Cloud Transmission & Bi-Directional Command Sync): The ESP32 formats a JSON payload: `{\"device_id\":\"esp32_street_01\", \"sensor\":1, \"ambient\":\"Dark\", \"led\":\"ON\"}` and dispatches it over Wi-Fi via `HTTPS POST` to the Render cloud backend. In the HTTP 201 response, the server returns active remote override directives (e.g., `mode: FORCE_ON` or `EMERGENCY_STROBE`), which the ESP32 instantly applies.")
+    add_bullet("Step 6 (Data Persistence & Analytics Accounting): The Node.js Express backend validates the payload structure and inserts a new record into the PostgreSQL `sensor_readings` table. It automatically computes running energy consumed (kWh), energy saved (%), tariff savings (₹), and avoided CO2 emissions.")
+    add_bullet("Step 7 (Live Dashboard Monitoring & Audit): The web dashboard polls the backend REST APIs every 3 seconds, dynamically updating the status cards, glowing street light bulb widget, Chart.js time-series line chart, and database table, while offering one-click CSV audit export.")
 
     # 8. CONNECTION DETAILS
     add_section_header("8. CONNECTION DETAILS")
@@ -385,18 +386,20 @@ def create_report():
     add_body_p("The implemented smart street light system was rigorously tested, successfully demonstrating the following results:")
     add_bullet("Autonomous Edge Switching: The LDR sensor accurately detects transitions between dark and bright environments. The street light LED turns ON immediately upon sensing darkness and turns OFF under bright light.")
     add_bullet("Reliable HTTPS Telemetry: The ESP32 successfully connects to Wi-Fi and dispatches JSON telemetry packets, consistently receiving `HTTP 201 Created` responses from the cloud server.")
-    add_bullet("Fault-Tolerant Local Operation: When network connectivity was deliberately interrupted, local light actuation continued without hesitation or system lockup.")
+    add_bullet("Two-Way Remote Override: Operators successfully toggled `FORCE ON`, `FORCE OFF`, and `EMERGENCY STROBE` from the web dashboard, with the physical ESP32 acknowledging and executing the command within 5 seconds.")
+    add_bullet("Energy & Economic Accounting: The cloud analytics engine accurately logged kWh consumption, calculated cost savings at ₹7.50/kWh, and determined carbon offset figures updated every 3 seconds.")
     add_bullet("Persistent Cloud Storage: PostgreSQL database records every event with millisecond precision, accurately logging device IDs, sensor DO states, ambient conditions, and LED status.")
-    add_bullet("Real-Time Visualization: The web dashboard updates dynamically every 3 seconds, updating metric cards, rendering time-series graphs, and logging historical telemetry records.")
-    add_bullet("Universal Accessibility: The dashboard is fully responsive and verified accessible across desktop browsers, laptops, tablets, and smartphones.")
+    add_bullet("One-Click Audit Report: The CSV export endpoint (`/api/export/csv`) reliably streamed up to 2,000 historical records into a structured `.csv` spreadsheet for municipal verification.")
+    add_bullet("Interactive Glowing Bulb Widget: The web dashboard renders an animated SVG light bulb that visually turns ON with warm radial glow or dims into glass standby based on live telemetry.")
 
     # 11. ADVANTAGES
     add_section_header("11. ADVANTAGES")
     add_bullet("Substantial Energy Conservation: Prevents unnecessary street light operation during daylight hours, reducing municipal electricity bills by an estimated 35%–50%.")
     add_bullet("Autonomous Failsafe Operation: Core switching functions occur locally at the microcontroller level, ensuring street lights operate even during internet outages.")
     add_bullet("Zero Human Dependency: Eliminates the necessity for manual patrol crews to toggle switches across city sectors.")
-    add_bullet("Real-Time Centralized Visibility: Municipal supervisors can verify the operational status of all street lighting assets in real time via an intuitive dashboard.")
-    add_bullet("Predictive Maintenance & Auditing: Historical telemetry records stored in PostgreSQL enable energy auditing, burn-time calculation, and proactive maintenance planning.")
+    add_bullet("Centralized Municipal Control: Supervisors can execute manual overrides or trigger emergency hazard strobes across road networks from any web browser.")
+    add_bullet("Live Economic & Carbon Visibility: Provides immediate data on financial savings and environmental CO2 emissions avoided.")
+    add_bullet("One-Click Compliance Auditing: Simplifies administrative reviews with instant CSV exports of all historical sensor events.")
     add_bullet("Low Cost & High Scalability: Built using standard off-the-shelf ESP32 boards and containerized cloud services that scale seamlessly to hundreds of lighting nodes.")
 
     # 12. APPLICATIONS
@@ -406,6 +409,7 @@ def create_report():
     add_bullet("Gated Residential Communities: Automated security and street illumination for apartment complexes and residential neighborhoods.")
     add_bullet("Industrial Yards & Warehouses: Perimeter security lighting and loading bay illumination automated based on ambient daylight.")
     add_bullet("Public Parks & Parking Facilities: Smart illumination for parking garages, outdoor lots, and municipal park promenades.")
+    add_bullet("Emergency Road Hazard Warning: Rapid activation of strobe flash mode to alert motorists of roadside accidents or maintenance work.")
 
     # 13. FUTURE ENHANCEMENTS
     add_section_header("13. FUTURE ENHANCEMENTS")
@@ -413,14 +417,14 @@ def create_report():
     add_bullet("Analog Illuminance & PWM Dimming: Interfacing the LDR analog output (AO) to an ESP32 ADC pin to implement multi-step PWM dimming proportional to twilight intensity.")
     add_bullet("Current Sensor & Fault Detection: Adding an ACS712 current sensor to detect lamp burn-out or open circuits, dispatching immediate fault alerts to maintenance technicians.")
     add_bullet("Solar PV & Battery Storage: Coupling the system with a solar panel, LiFePO4 battery, and charge controller for completely green, self-sustaining off-grid operation.")
-    add_bullet("Push & SMS Notifications: Integrating Webhooks or Telegram Bot APIs to send instant threshold alerts and fault summaries to municipal administrators' mobile devices.")
+    add_bullet("Mobile Push Notifications / Telegram Alerts: Integrating Webhooks or Telegram Bot APIs to send instant threshold alerts and fault summaries to municipal administrators' mobile devices.")
 
     # 14. CONCLUSION
     add_section_header("14. CONCLUSION")
     add_body_p(
         "The Smart Street Light Monitoring and Automation System demonstrates a complete, reliable, and production-ready IoT prototype "
         "that resolves the shortcomings of conventional municipal lighting. By combining autonomous edge sensing on an ESP32 with "
-        "a containerized cloud backend, PostgreSQL relational storage, and a real-time web dashboard, the project fulfills all objectives "
+        "a containerized cloud backend, PostgreSQL relational storage, energy economics analytics, and a real-time web dashboard, the project fulfills all objectives "
         "of modern IoT system design."
     )
     add_body_p(
@@ -436,8 +440,8 @@ def create_report():
         [
             "1. LDR Sensor Module → ESP32: Samples ambient illumination; comparator digitizes threshold; ESP32 actuates LED locally in <5ms.",
             "2. ESP32 → Cloud (Render Backend): Packages telemetry into JSON and dispatches via HTTPS POST over Wi-Fi on state transitions and 5s heartbeat.",
-            "3. Cloud Backend → PostgreSQL Database: Express API validates schema and executes parameterized INSERT into the 'sensor_readings' table.",
-            "4. Cloud Backend → Web Dashboard: Client browser polls REST endpoints every 3 seconds to update metric cards, Chart.js trends, and history logs."
+            "3. Cloud Backend → PostgreSQL Database & Analytics: Express API validates schema, inserts record into 'sensor_readings', computes energy/tariff metrics, and returns active remote control mode.",
+            "4. Cloud Backend → Web Dashboard: Client browser polls REST endpoints every 3 seconds to update metric cards, glowing bulb graphic, Chart.js trends, and history logs, while sending operator override commands."
         ],
         border_color="2563EB",
         bg_color="EFF6FF"
@@ -448,7 +452,7 @@ def create_report():
     add_body_p("The prototype hardware setup combines modular IoT edge computing and optical sensing components:")
     add_bullet("ESP32-WROOM-32: Dual-core Xtensa 32-bit LX6 microprocessor running at 240 MHz with 520 KB SRAM, 4 MB Flash, and integrated 802.11 b/g/n Wi-Fi transceiver.")
     add_bullet("LDR Module (Light Dependent Resistor): Features a cadmium sulfide (CdS) photoresistor whose resistance decreases in light, integrated with an LM393 comparator and onboard trimmer potentiometer.")
-    add_bullet("Actuator Unit: 5mm diffused white LED paired with a 220Ω metal-film resistor to safeguard GPIO 2 against overcurrent while delivering clear visual indication.")
+    add_bullet("Actuator Unit: 5mm diffused white LED paired with a 220Ω metal-film resistor to safeguard GPIO 2 against overcurrent while delivering clear visual indication (or connected via an optocoupled relay to a 220V household lamp).")
     add_bullet("Wiring Harness: Solderless breadboard and color-coded Dupont jumpers providing low-impedance electrical connections.")
     
     add_image_placeholder("Hardware Components & Circuit Assembly", "[ Insert photo of ESP32, LDR Sensor, and LED Breadboard Circuit ]", height_lines=5)
@@ -462,29 +466,35 @@ def create_report():
         [
             "┌────────────────────────────────────────────────────────────────────────┐",
             "│ 1. PHYSICAL SENSING & ACTUATION LAYER                                  │",
-            "│   [ LDR Sensor Module (GPIO 27) ] ───► [ Street Light LED (GPIO 2) ]   │",
+            "│   [ LDR Sensor Module (GPIO 27) ] ───► [ Street Light LED / Relay ]    │",
             "└───────────────────────────────────┬────────────────────────────────────┘",
             "                                    ▼",
             "┌────────────────────────────────────────────────────────────────────────┐",
             "│ 2. PROCESSING & WIRELESS CONNECTIVITY (ESP32 DevKit V1)               │",
             "│   - Ambient Logic Evaluation (Dark / Bright)                           │",
             "│   - Autonomous Actuator Control Loop (<5ms)                            │",
+            "│   - Remote Override Sync (Auto, Force ON, Force OFF, Strobe)           │",
             "│   - JSON Telemetry Serialization & HTTPS Client Transport               │",
             "└───────────────────────────────────┬────────────────────────────────────┘",
             "                                    ▼ (Wi-Fi / HTTPS POST)",
             "┌────────────────────────────────────────────────────────────────────────┐",
             "│ 3. CONTAINERIZED CLOUD BACKEND & DATABASE LAYER (Render / Docker)      │",
             "│   - Node.js / Express REST API Engine (Port 3000)                      │",
-            "│   - Schema Validation & PostgreSQL Connection Pool (pg.Pool)           │",
+            "│   - Energy & Cost Calculation Engine (kWh, ₹ Tariff, CO2 offset)       │",
+            "│   - Ingest & Remote Control Handlers (/api/readings, /api/control)     │",
             "│   - Managed PostgreSQL Database ('sensor_readings' Table)              │",
+            "│   - CSV Audit Export Engine (/api/export/csv)                          │",
             "└───────────────────────────────────┬────────────────────────────────────┘",
             "                                    ▼ (HTTP GET / REST APIs)",
             "┌────────────────────────────────────────────────────────────────────────┐",
             "│ 4. USER INTERFACE & REAL-TIME VISUALIZATION LAYER                      │",
             "│   - Web Dashboard (Responsive HTML5 / CSS3 Grid)                       │",
-            "│   - Ambient & LED Status Cards with Dynamic Visual Cue                 │",
-            "│   - Chart.js Time-Series History & LED State Distribution Doughnut     │",
-            "│   - Live Database Telemetry Log Table (Auto-polled every 3s)           │",
+            "│   - Real-Time Hardware Telemetry Grid (Ambient, Lamp, LDR, Records)    │",
+            "│   - Energy & Economic Analytics Grid (kWh Saved, ₹ Saved, CO2 Offset)  │",
+            "│   - Animated SVG Street Light Bulb Widget with Radial Glow             │",
+            "│   - Remote Override Control Panel (Auto, On, Off, SOS Strobe)          │",
+            "│   - Chart.js Time-Series History Line Chart                            │",
+            "│   - Live Database Telemetry Log Table with 1-Click CSV Download        │",
             "└────────────────────────────────────────────────────────────────────────┘"
         ],
         border_color="0F766E",
@@ -498,7 +508,8 @@ def create_report():
         "The finalized physical prototype was assembled and evaluated under simulated real-world conditions. "
         "During evaluation, covering the LDR sensor simulated nighttime ambient darkness, triggering instant LED illumination "
         "and sending telemetry to the cloud backend. When exposed to ambient room light or a flashlight, the LED turned OFF "
-        "immediately and transmitted updated status to the cloud."
+        "immediately and transmitted updated status to the cloud. Remote cloud override commands were tested, verifying instant "
+        "actuator response across all modes."
     )
     add_bullet("Physical Prototype Assembly: Breadboard circuit incorporating the ESP32, LDR sensor module, and LED fixture powered via 5V USB.")
     add_bullet("Serial Monitor Output: Demonstrates Wi-Fi connection establishment, local IP assignment, JSON telemetry construction, and `HTTP 201 Created` server responses.")
@@ -509,19 +520,18 @@ def create_report():
     # 19. DASHBOARD
     add_section_header("19. DASHBOARD")
     add_body_p(
-        "The real-time web dashboard acts as the primary monitoring console for municipal supervisors, accessible from any modern web browser. "
-        "It provides live operational metrics, historical trend analytics, and raw database records:"
+        "The real-time web dashboard acts as the primary monitoring and control console for municipal supervisors, accessible from any modern web browser. "
+        "It provides live operational metrics, energy analytics, remote override controls, and audit exports:"
     )
-    add_bullet("Status Header: Features dynamic connection pill indicator (showing '● Backend + PostgreSQL connected' in green when operational).")
-    add_bullet("Ambient Condition Card: Displays current ambient classification ('Dark' or 'Bright') derived from the latest reading.")
-    add_bullet("Street Light LED Card: Highlights the current actuator state ('ON' in yellow accent, 'OFF' in neutral accent).")
-    add_bullet("LDR Digital Output Card: Displays the discrete digital sensor value (1 for Dark, 0 for Bright).")
-    add_bullet("Total Records Card: Live count of all telemetry readings accumulated in the PostgreSQL database.")
+    add_bullet("Status Header: Features dynamic connection pill indicator (showing '● Backend + PostgreSQL connected' in green when operational) and a 1-click 'Export CSV Audit' button.")
+    add_bullet("Hardware Telemetry Grid: 4 cards displaying Ambient Condition (Dark/Bright), Street Light Bulb state (ON/OFF), LDR Digital Out (0/1), and Stored Database Records counter.")
+    add_bullet("Energy & Economic Analytics Grid: 4 cards calculating Energy Saved (%), Avoided kWh, Estimated Cost Saved (₹ at standard municipal tariff), and Avoided CO2 Emissions (kg).")
+    add_bullet("Animated SVG Light Bulb Widget: A realistic graphical street light bulb with dynamic tungsten filament and radial warm glow when active, glass standby when off, and high-visibility flashing in emergency strobe mode.")
+    add_bullet("Remote Cloud Override Panel: Interactive buttons allowing operators to switch between 🟢 Automatic, 💡 Force ON, 🌑 Force OFF, and 🚨 Emergency SOS Strobe.")
     add_bullet("Time-Series Line Chart: Chart.js visualization showing temporal LDR digital output variations across historical records.")
-    add_bullet("LED State Distribution Chart: Chart.js doughnut chart depicting the proportional distribution between LED ON and OFF states.")
-    add_bullet("Database Telemetry Log: Dynamic table presenting the 10 most recent readings with timestamps, device IDs, LDR states, ambient levels, and LED statuses.")
+    add_bullet("Database Telemetry Log Table: Dynamic table presenting the 10 most recent readings with timestamps, device IDs, LDR states, ambient levels, and LED statuses.")
 
-    add_image_placeholder("Web Dashboard Interface Screenshot", "[ Insert Screenshot of Live Web Dashboard with Active Telemetry & Charts ]", height_lines=6)
+    add_image_placeholder("Web Dashboard Interface Screenshot", "[ Insert Screenshot of Live Web Dashboard with Active Telemetry & Energy Analytics ]", height_lines=6)
 
     # Save Document
     filename = "SMART_STREET_LIGHT_PROJECT_REPORT.docx"

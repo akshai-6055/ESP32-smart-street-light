@@ -28,6 +28,12 @@ const poolConfig = connectionString
 
 const pool = new Pool(poolConfig);
 
+// In-Memory Cloud Remote Override State
+let controlState = {
+  mode: 'AUTOMATIC', // 'AUTOMATIC', 'FORCE_ON', 'FORCE_OFF', 'EMERGENCY_STROBE'
+  updated_at: new Date().toISOString()
+};
+
 // Auto-initialize PostgreSQL schema on startup
 async function initDatabase() {
   try {
@@ -49,6 +55,7 @@ async function initDatabase() {
 }
 initDatabase();
 
+// Health Check
 app.get('/api/health', async (_req, res) => {
   try {
     await pool.query('SELECT 1');
@@ -58,6 +65,7 @@ app.get('/api/health', async (_req, res) => {
   }
 });
 
+// Ingest Telemetry from ESP32
 app.post('/api/readings', async (req, res) => {
   const b = req.body || {};
   const deviceId = String(b.device_id || 'streetlight_01').slice(0, 64);
@@ -74,13 +82,19 @@ app.post('/api/readings', async (req, res) => {
       'INSERT INTO sensor_readings (device_id, ldr_digital, ambient, led_status) VALUES ($1, $2, $3, $4) RETURNING id',
       [deviceId, sensor, ambient, led]
     );
-    res.status(201).json({ saved: true, id: result.rows[0].id });
+    // Returns confirmation and current control directive to ESP32
+    res.status(201).json({
+      saved: true,
+      id: result.rows[0].id,
+      mode: controlState.mode
+    });
   } catch (e) {
     console.error(e.message);
     res.status(500).json({ error: 'Could not save reading' });
   }
 });
 
+// Latest Reading
 app.get('/api/readings/latest', async (_req, res) => {
   try {
     const result = await pool.query(
@@ -92,6 +106,7 @@ app.get('/api/readings/latest', async (_req, res) => {
   }
 });
 
+// Historical Readings
 app.get('/api/readings', async (req, res) => {
   const limit = Math.min(Math.max(parseInt(req.query.limit || '50', 10) || 50, 1), 500);
   try {
@@ -105,6 +120,7 @@ app.get('/api/readings', async (req, res) => {
   }
 });
 
+// Analytics & Energy Summary
 app.get('/api/summary', async (_req, res) => {
   try {
     const result = await pool.query(`
@@ -115,13 +131,77 @@ app.get('/api/summary', async (_req, res) => {
       FROM sensor_readings
     `);
     const row = result.rows[0] || {};
+    const total = Number(row.total_records || 0);
+    const onCount = Number(row.led_on_records || 0);
+    const offCount = Number(row.led_off_records || 0);
+
+    // Energy Calculations (Based on 60W standard street lamp, ~5 sec per telemetry interval)
+    const LAMP_WATTAGE = 60; // Watts
+    const INTERVAL_SEC = 5;  // Seconds per cycle
+    const TARIFF_PER_KWH = 7.5; // ₹ 7.50 per kWh
+    const CO2_FACTOR = 0.82; // 0.82 kg CO2 per kWh
+
+    const onHours = (onCount * INTERVAL_SEC) / 3600;
+    const offHours = (offCount * INTERVAL_SEC) / 3600;
+
+    const energyConsumedKwh = (onHours * LAMP_WATTAGE) / 1000;
+    const energySavedKwh = (offHours * LAMP_WATTAGE) / 1000;
+    const energySavedPct = total > 0 ? (offCount / total) * 100 : 0;
+    const costSavedInr = energySavedKwh * TARIFF_PER_KWH;
+    const co2AvoidedKg = energySavedKwh * CO2_FACTOR;
+
     res.json({
-      total_records: Number(row.total_records || 0),
-      led_on_records: Number(row.led_on_records || 0),
-      led_off_records: Number(row.led_off_records || 0)
+      total_records: total,
+      led_on_records: onCount,
+      led_off_records: offCount,
+      energy_consumed_kwh: Number(energyConsumedKwh.toFixed(3)),
+      energy_saved_kwh: Number(energySavedKwh.toFixed(3)),
+      energy_saved_pct: Number(energySavedPct.toFixed(1)),
+      cost_saved_inr: Number(costSavedInr.toFixed(2)),
+      co2_avoided_kg: Number(co2AvoidedKg.toFixed(2)),
+      control_mode: controlState.mode
     });
   } catch (e) {
     res.status(500).json({ error: 'Could not fetch summary' });
+  }
+});
+
+// Remote Control Endpoints
+app.get('/api/control', (_req, res) => {
+  res.json(controlState);
+});
+
+app.post('/api/control', (req, res) => {
+  const { mode } = req.body || {};
+  const validModes = ['AUTOMATIC', 'FORCE_ON', 'FORCE_OFF', 'EMERGENCY_STROBE'];
+  if (!validModes.includes(mode)) {
+    return res.status(400).json({ error: 'Invalid mode. Must be one of: ' + validModes.join(', ') });
+  }
+  controlState = {
+    mode,
+    updated_at: new Date().toISOString()
+  };
+  console.log(`[Control] Street light mode switched to: ${mode}`);
+  res.json({ success: true, controlState });
+});
+
+// Export Telemetry to CSV
+app.get('/api/export/csv', async (_req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, device_id, ldr_digital, ambient, led_status, received_at FROM sensor_readings ORDER BY id DESC LIMIT 2000'
+    );
+    let csv = 'Record ID,Device ID,LDR Digital State,Ambient Condition,Lamp Status,Timestamp (UTC)\n';
+    result.rows.forEach(r => {
+      const ts = r.received_at ? new Date(r.received_at).toISOString() : '';
+      csv += `${r.id},"${r.device_id}",${r.ldr_digital},"${r.ambient}","${r.led_status}","${ts}"\n`;
+    });
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="smart_street_light_telemetry_audit.csv"');
+    res.send(csv);
+  } catch (e) {
+    res.status(500).send('Error generating CSV telemetry export');
   }
 });
 
