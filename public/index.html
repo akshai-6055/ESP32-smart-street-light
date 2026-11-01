@@ -1,274 +1,578 @@
 <!doctype html>
-<html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Smart Street Light Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<style>
-:root{
-  color-scheme:dark;
-  --bg:#0b1220;
-  --panel:#151f32;
-  --muted:#9eacc4;
-  --yellow:#facc15;
-  --yellow-glow:rgba(250,204,21,0.5);
-  --blue:#60a5fa;
-  --green:#34d399;
-  --red:#fb7185;
-}
-*{box-sizing:border-box}
-body{margin:0;padding:24px;font-family:Arial,sans-serif;background:var(--bg);color:#edf3ff}
-main{max-width:1100px;margin:auto}
-header{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:22px}
-h1{color:var(--yellow);margin:0 0 8px}
-p,.muted{color:var(--muted);margin:0}
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Smart Street Light IoT Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1220;
+      --panel: #151f32;
+      --panel-border: #26344b;
+      --muted: #9eacc4;
+      --yellow: #facc15;
+      --yellow-glow: rgba(250, 204, 21, 0.5);
+      --blue: #60a5fa;
+      --green: #34d399;
+      --red: #fb7185;
+      --purple: #c084fc;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: #edf3ff;
+    }
+    main { max-width: 1140px; margin: auto; }
+    
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--panel-border);
+    }
+    h1 { color: var(--yellow); margin: 0 0 6px; font-size: 1.8rem; }
+    p, .muted { color: var(--muted); margin: 0; }
+    .header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    
+    .btn-export {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #1e293b;
+      color: #edf3ff;
+      border: 1px solid #3b82f6;
+      padding: 8px 14px;
+      border-radius: 99px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    .btn-export:hover {
+      background: #2563eb;
+      color: #ffffff;
+      box-shadow: 0 0 12px rgba(37, 99, 235, 0.4);
+    }
 
-.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
-.card{background:var(--panel);border:1px solid #26344b;border-radius:16px;padding:18px;margin-bottom:14px}
-.label{color:var(--muted);font-size:.9rem;margin-bottom:12px}
-.value{font-size:1.8rem;font-weight:bold}
-.green{color:var(--green)}.yellow{color:var(--yellow)}.red{color:var(--red)}
+    .pill {
+      background: #202d44;
+      border-radius: 99px;
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .green { color: var(--green); }
+    .yellow { color: var(--yellow); }
+    .red { color: var(--red); }
+    .blue { color: var(--blue); }
+    .purple { color: var(--purple); }
 
-.charts{display:grid;grid-template-columns:1.4fr 1fr;gap:14px}
-.chart{height:290px;position:relative}
-.pill{background:#202d44;border-radius:99px;padding:9px 13px}
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      padding: 16px 18px;
+    }
+    .card-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .label {
+      color: var(--muted);
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+    .value { font-size: 1.7rem; font-weight: bold; }
+    .subvalue { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
 
-/* Real Light Bulb Widget Styling */
-.bulb-display{display:flex;flex-direction:column;align-items:center;justify-content:center;height:290px;position:relative}
-.bulb-glow-halo{
-  position:absolute;width:180px;height:180px;border-radius:50%;
-  background:radial-gradient(circle, var(--yellow-glow) 0%, rgba(250,204,21,0.08) 45%, transparent 70%);
-  filter:blur(8px);opacity:0;transition:opacity .4s ease, transform .4s ease;transform:scale(0.85);pointer-events:none;
-}
-.bulb-svg{width:110px;height:140px;filter:drop-shadow(0 4px 10px rgba(0,0,0,0.5));transition:all .4s ease}
+    /* Energy Analytics Cards Accent */
+    .card.energy-card {
+      background: linear-gradient(135deg, #151f32 0%, #17243c 100%);
+      border-left: 3px solid var(--green);
+    }
+    .card.cost-card { border-left: 3px solid var(--yellow); }
+    .card.carbon-card { border-left: 3px solid var(--blue); }
+    .card.consumed-card { border-left: 3px solid var(--purple); }
 
-/* Bulb Off State */
-.bulb-glass{fill:#1e293b;stroke:#475569;stroke-width:2;transition:all .4s ease}
-.bulb-filament{stroke:#475569;stroke-width:2;fill:none;transition:all .4s ease}
-.bulb-base{fill:#64748b}
-.bulb-threads{fill:#475569}
-.bulb-contact{fill:#334155}
+    /* Middle Layout */
+    .middle-section {
+      display: grid;
+      grid-template-columns: 1.35fr 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .chart-box { height: 280px; position: relative; }
 
-/* Bulb On State */
-.bulb-display.is-on .bulb-glow-halo{opacity:1;transform:scale(1.15)}
-.bulb-display.is-on .bulb-svg{filter:drop-shadow(0 0 25px rgba(250,204,21,0.9)) drop-shadow(0 0 50px rgba(250,204,21,0.4))}
-.bulb-display.is-on .bulb-glass{fill:url(#bulbGlowGradient);stroke:#fef08a;stroke-width:2.5}
-.bulb-display.is-on .bulb-filament{stroke:#ffffff;stroke-width:2.8;filter:drop-shadow(0 0 6px #fff)}
+    /* Bulb Widget */
+    .bulb-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      text-align: center;
+      position: relative;
+    }
+    .bulb-visual-wrapper {
+      position: relative;
+      width: 100%;
+      height: 180px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .bulb-glow-halo {
+      position: absolute;
+      width: 170px;
+      height: 170px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--yellow-glow) 0%, rgba(250, 204, 21, 0.08) 50%, transparent 70%);
+      filter: blur(10px);
+      opacity: 0;
+      transform: scale(0.85);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+      pointer-events: none;
+    }
+    .bulb-svg {
+      width: 100px;
+      height: 130px;
+      filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
+      transition: all 0.4s ease;
+    }
+    
+    /* Bulb Off State */
+    .bulb-glass { fill: #1e293b; stroke: #475569; stroke-width: 2; transition: all 0.4s ease; }
+    .bulb-filament { stroke: #475569; stroke-width: 2; fill: none; transition: all 0.4s ease; }
+    .bulb-base { fill: #64748b; }
+    .bulb-threads { fill: #475569; }
+    .bulb-contact { fill: #334155; }
 
-.bulb-badge{
-  margin-top:14px;padding:6px 16px;border-radius:99px;font-size:1.05rem;font-weight:bold;
-  background:#1e293b;color:var(--muted);border:1px solid #334155;transition:all .3s ease;
-}
-.bulb-display.is-on .bulb-badge{
-  background:rgba(250,204,21,0.18);color:#fef08a;border-color:#facc15;
-  box-shadow:0 0 16px rgba(250,204,21,0.3);
-}
-.bulb-desc{font-size:.85rem;color:var(--muted);margin-top:6px;text-align:center}
-.bulb-stat-bar{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:.8rem;color:var(--muted)}
-.stat-track{width:90px;height:6px;background:#243249;border-radius:99px;overflow:hidden}
-.stat-fill{height:100%;width:0%;background:var(--yellow);transition:width .4s ease}
+    /* Bulb On State */
+    .bulb-card.is-on .bulb-glow-halo { opacity: 1; transform: scale(1.15); }
+    .bulb-card.is-on .bulb-svg {
+      filter: drop-shadow(0 0 25px rgba(250, 204, 21, 0.9)) drop-shadow(0 0 50px rgba(250, 204, 21, 0.4));
+    }
+    .bulb-card.is-on .bulb-glass { fill: url(#bulbGlowGradient); stroke: #fef08a; stroke-width: 2.5; }
+    .bulb-card.is-on .bulb-filament { stroke: #ffffff; stroke-width: 2.8; filter: drop-shadow(0 0 6px #fff); }
 
-.tablewrap{overflow-x:auto}
-table{border-collapse:collapse;width:100%;min-width:540px}
-td,th{text-align:left;padding:11px;border-bottom:1px solid #2a3850}
-th{color:var(--muted)}
+    /* Strobe State */
+    .bulb-card.is-strobe .bulb-svg {
+      animation: strobeAnim 0.3s infinite alternate;
+    }
+    @keyframes strobeAnim {
+      0% { filter: drop-shadow(0 0 5px rgba(251, 113, 133, 0.3)); opacity: 0.3; }
+      100% { filter: drop-shadow(0 0 35px rgba(251, 113, 133, 1)); opacity: 1; }
+    }
 
-@media(max-width:800px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.charts{grid-template-columns:1fr}}
-@media(max-width:480px){body{padding:12px}.card{padding:13px}.value{font-size:1.4rem}}
-</style></head><body><main>
+    .bulb-badge {
+      display: inline-block;
+      padding: 5px 14px;
+      border-radius: 99px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      background: #1e293b;
+      color: var(--muted);
+      border: 1px solid #334155;
+      margin-top: 4px;
+      transition: all 0.3s ease;
+    }
+    .bulb-card.is-on .bulb-badge {
+      background: rgba(250, 204, 21, 0.18);
+      color: #fef08a;
+      border-color: #facc15;
+      box-shadow: 0 0 16px rgba(250, 204, 21, 0.3);
+    }
+    .bulb-desc { font-size: 0.8rem; color: var(--muted); margin: 6px 0 12px; }
 
-<header>
-  <div>
-    <h1>💡 Smart Street Light</h1>
-    <p>ESP32 · LDR · Node.js · PostgreSQL</p>
-  </div>
-  <div id="connection" class="pill">Connecting…</div>
-</header>
+    /* Remote Control Section */
+    .control-panel {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 10px;
+    }
+    .control-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .mode-btn-group {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+    .mode-btn {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      padding: 7px 4px;
+      border-radius: 8px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+    .mode-btn:hover { background: #2d3b55; color: #fff; }
+    .mode-btn.active {
+      background: #2563eb;
+      color: #fff;
+      border-color: #60a5fa;
+      box-shadow: 0 0 10px rgba(37, 99, 235, 0.5);
+    }
+    .mode-btn.active.sos {
+      background: #e11d48;
+      border-color: #fb7185;
+      box-shadow: 0 0 10px rgba(225, 29, 72, 0.5);
+    }
 
-<section class="grid">
-  <div class="card"><div class="label">Ambient condition</div><div class="value" id="ambient">—</div></div>
-  <div class="card"><div class="label">Street light bulb</div><div class="value" id="led">—</div></div>
-  <div class="card"><div class="label">LDR digital output</div><div class="value" id="ldr">—</div></div>
-  <div class="card"><div class="label">Stored records</div><div class="value" id="records">0</div></div>
-</section>
+    /* Table */
+    .tablewrap { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; min-width: 580px; }
+    td, th { text-align: left; padding: 11px; border-bottom: 1px solid #2a3850; font-size: 0.88rem; }
+    th { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
 
-<section class="charts">
-  <div class="card">
-    <div class="label">LDR digital output history</div>
-    <div class="chart"><canvas id="sensorChart"></canvas></div>
-  </div>
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .middle-section { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      body { padding: 12px; }
+      .grid { grid-template-columns: 1fr; }
+      .mode-btn-group { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+<main>
 
-  <div class="card">
-    <div class="label">Real-Time Street Light Bulb</div>
-    <div class="bulb-display" id="bulbDisplay">
-      <div class="bulb-glow-halo"></div>
-      
-      <svg class="bulb-svg" viewBox="0 0 100 135" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <radialGradient id="bulbGlowGradient" cx="50%" cy="40%" r="60%">
-            <stop offset="0%" stop-color="#ffffff" />
-            <stop offset="35%" stop-color="#fff59d" />
-            <stop offset="70%" stop-color="#facc15" />
-            <stop offset="100%" stop-color="#eab308" />
-          </radialGradient>
-        </defs>
-        <!-- Glass Bulb Body -->
-        <path class="bulb-glass" d="M50 12 C30 12 18 28 18 48 C18 64 28 75 35 88 L35 96 L65 96 L65 88 C72 75 82 64 82 48 C82 28 70 12 50 12 Z"/>
-        <!-- Filament Mounts & Coil -->
-        <path class="bulb-filament" d="M42 85 L44 54 L48 58 L52 54 L56 58 L58 85"/>
-        <line class="bulb-filament" x1="44" y1="54" x2="56" y2="54"/>
-        <!-- Metallic Screw Base -->
-        <rect class="bulb-base" x="35" y="96" width="30" height="7" rx="2"/>
-        <rect class="bulb-threads" x="37" y="104" width="26" height="5" rx="2"/>
-        <rect class="bulb-threads" x="39" y="110" width="22" height="5" rx="2"/>
-        <!-- Bottom Contact Point -->
-        <path class="bulb-contact" d="M42 116 Q50 125 58 116 Z"/>
-      </svg>
+  <!-- Header -->
+  <header>
+    <div>
+      <h1>💡 Smart Street Light IoT</h1>
+      <p>Autonomous Edge Control · PostgreSQL Cloud Analytics · Remote Override</p>
+    </div>
+    <div class="header-actions">
+      <a href="/api/export/csv" class="btn-export" title="Download historical database records as CSV">
+        📥 Export CSV Audit
+      </a>
+      <div id="connection" class="pill">Connecting…</div>
+    </div>
+  </header>
 
-      <div class="bulb-badge" id="bulbBadge">BULB OFF</div>
-      <div class="bulb-desc" id="bulbDesc">Lamp is de-energized · Daylight mode</div>
-      <div class="bulb-stat-bar">
-        <span>Historical ON time:</span>
-        <div class="stat-track"><div class="stat-fill" id="statFill"></div></div>
-        <span id="statPct">0%</span>
+  <!-- Energy & Economics Analytics Grid -->
+  <section class="grid">
+    <div class="card energy-card">
+      <div class="card-title-row"><span class="label">Energy Saved</span><span>🌱</span></div>
+      <div class="value green" id="energySavedPct">0.0%</div>
+      <div class="subvalue" id="energySavedKwh">0.000 kWh avoided</div>
+    </div>
+
+    <div class="card cost-card">
+      <div class="card-title-row"><span class="label">Cost Saved (Est.)</span><span>💰</span></div>
+      <div class="value yellow" id="costSaved">₹0.00</div>
+      <div class="subvalue">Tariff @ ₹7.50 / kWh</div>
+    </div>
+
+    <div class="card carbon-card">
+      <div class="card-title-row"><span class="label">CO₂ Offset</span><span>🌍</span></div>
+      <div class="value blue" id="co2Saved">0.00 kg</div>
+      <div class="subvalue">0.82 kg/kWh grid factor</div>
+    </div>
+
+    <div class="card consumed-card">
+      <div class="card-title-row"><span class="label">Active Consumed</span><span>⚡</span></div>
+      <div class="value purple" id="energyConsumed">0.000 kWh</div>
+      <div class="subvalue">Rated: 60W standard LED</div>
+    </div>
+  </section>
+
+  <!-- Middle Row: History Line Chart + Real Bulb / Cloud Control Widget -->
+  <section class="middle-section">
+    <!-- Chart Box -->
+    <div class="card">
+      <div class="card-title-row">
+        <span class="label">LDR Digital Output History</span>
+        <span class="subvalue">Live Telemetry Trend</span>
+      </div>
+      <div class="chart-box">
+        <canvas id="sensorChart"></canvas>
       </div>
     </div>
-  </div>
-</section>
 
-<section class="card">
-  <div class="label">Latest database readings</div>
-  <div class="tablewrap">
-    <table>
-      <thead><tr><th>Received</th><th>Device</th><th>LDR DO</th><th>Ambient</th><th>Bulb Status</th></tr></thead>
-      <tbody id="rows"><tr><td colspan="5">Waiting for readings…</td></tr></tbody>
-    </table>
-  </div>
-</section>
+    <!-- Real Bulb & Remote Override -->
+    <div class="card bulb-card" id="bulbCard">
+      <div class="card-title-row" style="width:100%">
+        <span class="label">Street Light Bulb View</span>
+        <span class="pill" id="modePill" style="font-size:0.7rem;padding:4px 8px">AUTO MODE</span>
+      </div>
 
-<p class="muted">Dashboard refreshes every 3 seconds. Real-time telemetry is synced from ESP32 via HTTPS to Render Cloud PostgreSQL.</p>
+      <div class="bulb-visual-wrapper">
+        <div class="bulb-glow-halo"></div>
+        <svg class="bulb-svg" viewBox="0 0 100 135" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="bulbGlowGradient" cx="50%" cy="40%" r="60%">
+              <stop offset="0%" stop-color="#ffffff" />
+              <stop offset="35%" stop-color="#fff59d" />
+              <stop offset="70%" stop-color="#facc15" />
+              <stop offset="100%" stop-color="#eab308" />
+            </radialGradient>
+          </defs>
+          <path class="bulb-glass" d="M50 12 C30 12 18 28 18 48 C18 64 28 75 35 88 L35 96 L65 96 L65 88 C72 75 82 64 82 48 C82 28 70 12 50 12 Z"/>
+          <path class="bulb-filament" d="M42 85 L44 54 L48 58 L52 54 L56 58 L58 85"/>
+          <line class="bulb-filament" x1="44" y1="54" x2="56" y2="54"/>
+          <rect class="bulb-base" x="35" y="96" width="30" height="7" rx="2"/>
+          <rect class="bulb-threads" x="37" y="104" width="26" height="5" rx="2"/>
+          <rect class="bulb-threads" x="39" y="110" width="22" height="5" rx="2"/>
+          <path class="bulb-contact" d="M42 116 Q50 125 58 116 Z"/>
+        </svg>
+      </div>
+
+      <div class="bulb-badge" id="bulbBadge">BULB STANDBY</div>
+      <div class="bulb-desc" id="bulbDesc">Awaiting sensor data…</div>
+
+      <!-- Remote Control Bar -->
+      <div class="control-panel">
+        <div class="control-header">
+          <span>Remote Override:</span>
+          <span id="currentModeLabel" class="yellow">AUTOMATIC</span>
+        </div>
+        <div class="mode-btn-group">
+          <button class="mode-btn active" onclick="setMode('AUTOMATIC')">🟢 Auto</button>
+          <button class="mode-btn" onclick="setMode('FORCE_ON')">💡 On</button>
+          <button class="mode-btn" onclick="setMode('FORCE_OFF')">🌑 Off</button>
+          <button class="mode-btn sos" onclick="setMode('EMERGENCY_STROBE')">🚨 SOS</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Database Table -->
+  <section class="card">
+    <div class="card-title-row">
+      <span class="label">Latest Database Readings (PostgreSQL)</span>
+      <span class="subvalue" id="recordsBadge">0 records logged</span>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Received At</th>
+            <th>Device ID</th>
+            <th>LDR DO</th>
+            <th>Ambient State</th>
+            <th>Lamp Actuation</th>
+          </tr>
+        </thead>
+        <tbody id="rows">
+          <tr><td colspan="5">Waiting for readings from ESP32…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <p class="muted" style="margin-top:16px;text-align:center;font-size:0.85rem">
+    Smart Street Light Monitoring System · Cloud Node.js + PostgreSQL · Automatic Telemetry Sync
+  </p>
 </main>
 
 <script>
-const common = {
-  responsive: true,
-  maintainAspectRatio: false,
-  animation: false,
-  plugins: { legend: { labels: { color: '#edf3ff' } } },
-  scales: {
-    x: { ticks: { color: '#9eacc4', maxTicksLimit: 7 }, grid: { color: '#28364c' } },
-    y: { ticks: { color: '#9eacc4' }, grid: { color: '#28364c' } }
-  }
-};
+  let activeControlMode = 'AUTOMATIC';
 
-const sensorChart = new Chart(document.getElementById('sensorChart'), {
-  type: 'line',
-  data: {
-    labels: [],
-    datasets: [{
-      label: 'LDR DO (1=Dark, 0=Bright)',
-      data: [],
-      borderColor: '#60a5fa',
-      backgroundColor: '#60a5fa33',
-      fill: true,
-      tension: 0.2,
-      pointRadius: 2
-    }]
-  },
-  options: {
-    ...common,
+  const common = {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: false,
+    plugins: { legend: { labels: { color: '#edf3ff' } } },
     scales: {
-      ...common.scales,
-      y: { min: 0, max: 1, ticks: { stepSize: 1, color: '#9eacc4' }, grid: { color: '#28364c' } }
+      x: { ticks: { color: '#9eacc4', maxTicksLimit: 7 }, grid: { color: '#28364c' } },
+      y: { ticks: { color: '#9eacc4' }, grid: { color: '#28364c' } }
+    }
+  };
+
+  const sensorChart = new Chart(document.getElementById('sensorChart'), {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'LDR DO (1=Darkness, 0=Daylight)',
+        data: [],
+        borderColor: '#60a5fa',
+        backgroundColor: '#60a5fa22',
+        fill: true,
+        tension: 0.2,
+        pointRadius: 2.5
+      }]
+    },
+    options: {
+      ...common,
+      scales: {
+        ...common.scales,
+        y: { min: 0, max: 1, ticks: { stepSize: 1, color: '#9eacc4' }, grid: { color: '#28364c' } }
+      }
+    }
+  });
+
+  function time(v) {
+    if (!v) return '—';
+    const d = new Date(v);
+    return Number.isNaN(d.getTime()) ? String(v) : d.toLocaleString();
+  }
+
+  // Set Remote Override Mode
+  async function setMode(mode) {
+    try {
+      const res = await fetch('/api/control', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode })
+      });
+      if (res.ok) {
+        activeControlMode = mode;
+        updateControlUI(mode);
+      }
+    } catch (e) {
+      console.error('Failed to update control mode', e);
     }
   }
-});
 
-function time(v){
-  if(!v) return '—';
-  const d = new Date(v);
-  return Number.isNaN(d.getTime()) ? String(v) : d.toLocaleString();
-}
+  function updateControlUI(mode) {
+    document.getElementById('currentModeLabel').textContent = mode;
+    document.getElementById('modePill').textContent = mode;
 
-async function refresh(){
-  try {
-    const responses = await Promise.all([
-      fetch('/api/readings/latest', { cache: 'no-store' }),
-      fetch('/api/readings?limit=50', { cache: 'no-store' }),
-      fetch('/api/summary', { cache: 'no-store' })
-    ]);
-
-    if (responses.some(r => !r.ok)) throw Error('API unavailable');
-    const [latest, history, summary] = await Promise.all(responses.map(r => r.json()));
-
-    const c = document.getElementById('connection');
-    c.textContent = '● Backend + PostgreSQL connected';
-    c.className = 'pill green';
-
-    document.getElementById('records').textContent = summary.total_records;
-    document.getElementById('ambient').textContent = latest ? latest.ambient : 'Waiting';
-    
-    // Status Card & Real Bulb Representation
-    const ledCard = document.getElementById('led');
-    const bulbDisplay = document.getElementById('bulbDisplay');
-    const bulbBadge = document.getElementById('bulbBadge');
-    const bulbDesc = document.getElementById('bulbDesc');
-
-    const isBulbOn = latest && latest.led_status === 'ON';
-
-    if (isBulbOn) {
-      ledCard.textContent = 'ON';
-      ledCard.className = 'value yellow';
-      bulbDisplay.classList.add('is-on');
-      bulbBadge.textContent = '💡 REAL BULB ON';
-      bulbDesc.textContent = 'Illumination Active · High Luminosity';
-    } else {
-      ledCard.textContent = latest ? 'OFF' : 'Waiting';
-      ledCard.className = 'value';
-      bulbDisplay.classList.remove('is-on');
-      bulbBadge.textContent = '🌑 BULB OFF';
-      bulbDesc.textContent = 'Lamp Standby · Daylight Energy Saving';
-    }
-
-    document.getElementById('ldr').textContent = latest ? latest.ldr_digital : '—';
-
-    // Update Line Chart
-    sensorChart.data.labels = history.map(x => time(x.received_at));
-    sensorChart.data.datasets[0].data = history.map(x => Number(x.ldr_digital));
-    sensorChart.update('none');
-
-    // Update Historical ON Percentage Stat
-    const onCount = history.filter(x => x.led_status === 'ON').length;
-    const totalCount = history.length;
-    const pct = totalCount > 0 ? Math.round((onCount / totalCount) * 100) : 0;
-    document.getElementById('statFill').style.width = pct + '%';
-    document.getElementById('statPct').textContent = pct + '%';
-
-    // Update Table
-    const tbody = document.getElementById('rows');
-    tbody.replaceChildren();
-    history.slice().reverse().slice(0, 10).forEach(x => {
-      const tr = document.createElement('tr');
-      [time(x.received_at), x.device_id, x.ldr_digital, x.ambient, x.led_status].forEach(v => {
-        const td = document.createElement('td');
-        td.textContent = String(v ?? '—');
-        tr.appendChild(td);
-      });
-      tbody.appendChild(tr);
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.classList.remove('active');
+      if (
+        (mode === 'AUTOMATIC' && btn.textContent.includes('Auto')) ||
+        (mode === 'FORCE_ON' && btn.textContent.includes('On')) ||
+        (mode === 'FORCE_OFF' && btn.textContent.includes('Off')) ||
+        (mode === 'EMERGENCY_STROBE' && btn.textContent.includes('SOS'))
+      ) {
+        btn.classList.add('active');
+      }
     });
 
-    if (!history.length) {
-      tbody.innerHTML = '<tr><td colspan="5">No data yet. Waiting for ESP32 readings.</td></tr>';
+    const bulbCard = document.getElementById('bulbCard');
+    if (mode === 'EMERGENCY_STROBE') {
+      bulbCard.classList.add('is-strobe');
+      bulbCard.classList.remove('is-on');
+      document.getElementById('bulbBadge').textContent = '🚨 EMERGENCY STROBE';
+      document.getElementById('bulbDesc').textContent = 'Remote SOS Alert Override Active';
+    } else {
+      bulbCard.classList.remove('is-strobe');
     }
-
-  } catch (e) {
-    const c = document.getElementById('connection');
-    c.textContent = '● Backend unavailable — retrying';
-    c.className = 'pill red';
   }
-}
 
-refresh();
-setInterval(refresh, 3000);
+  async function refresh() {
+    try {
+      const responses = await Promise.all([
+        fetch('/api/readings/latest', { cache: 'no-store' }),
+        fetch('/api/readings?limit=50', { cache: 'no-store' }),
+        fetch('/api/summary', { cache: 'no-store' })
+      ]);
+
+      if (responses.some(r => !r.ok)) throw Error('API unavailable');
+      const [latest, history, summary] = await Promise.all(responses.map(r => r.json()));
+
+      const c = document.getElementById('connection');
+      c.textContent = '● Backend + PostgreSQL connected';
+      c.className = 'pill green';
+
+      // Record count badge
+      const recBadge = document.getElementById('recordsBadge');
+      if (recBadge) recBadge.textContent = `${summary.total_records} records logged`;
+
+      // Bulb and Mode updates
+      const bulbCard = document.getElementById('bulbCard');
+      const bulbBadge = document.getElementById('bulbBadge');
+      const bulbDesc = document.getElementById('bulbDesc');
+
+      const isLedOn = latest && latest.led_status === 'ON';
+
+      if (summary.control_mode && summary.control_mode !== activeControlMode) {
+        activeControlMode = summary.control_mode;
+        updateControlUI(activeControlMode);
+      }
+
+      if (activeControlMode !== 'EMERGENCY_STROBE') {
+        if (isLedOn || activeControlMode === 'FORCE_ON') {
+          bulbCard.classList.add('is-on');
+          bulbBadge.textContent = '💡 STREET LIGHT ON';
+          bulbDesc.textContent = activeControlMode === 'FORCE_ON'
+            ? 'Manual Override (Always ON)'
+            : `Illuminated · Ambient: ${latest ? latest.ambient : 'Dark'} (LDR: ${latest ? latest.ldr_digital : 1})`;
+        } else {
+          bulbCard.classList.remove('is-on');
+          bulbBadge.textContent = '🌑 STREET LIGHT OFF';
+          bulbDesc.textContent = activeControlMode === 'FORCE_OFF'
+            ? 'Manual Override (Always OFF)'
+            : `Lamp Standby · Ambient: ${latest ? latest.ambient : 'Bright'} (LDR: ${latest ? latest.ldr_digital : 0})`;
+        }
+      }
+
+      // Energy Analytics Summary
+      document.getElementById('energySavedPct').textContent = summary.energy_saved_pct + '%';
+      document.getElementById('energySavedKwh').textContent = summary.energy_saved_kwh + ' kWh avoided';
+      document.getElementById('costSaved').textContent = '₹' + summary.cost_saved_inr;
+      document.getElementById('co2Saved').textContent = summary.co2_avoided_kg + ' kg';
+      document.getElementById('energyConsumed').textContent = summary.energy_consumed_kwh + ' kWh';
+
+      // Line Chart update
+      sensorChart.data.labels = history.map(x => time(x.received_at));
+      sensorChart.data.datasets[0].data = history.map(x => Number(x.ldr_digital));
+      sensorChart.update('none');
+
+      // Table update
+      const tbody = document.getElementById('rows');
+      tbody.replaceChildren();
+      history.slice().reverse().slice(0, 10).forEach(x => {
+        const tr = document.createElement('tr');
+        [time(x.received_at), x.device_id, x.ldr_digital, x.ambient, x.led_status].forEach(v => {
+          const td = document.createElement('td');
+          td.textContent = String(v ?? '—');
+          if (v === 'ON') td.style.color = '#facc15';
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+
+      if (!history.length) {
+        tbody.innerHTML = '<tr><td colspan="5">No data yet. Waiting for ESP32 readings.</td></tr>';
+      }
+    } catch (e) {
+      const c = document.getElementById('connection');
+      c.textContent = '● Backend unavailable — retrying';
+      c.className = 'pill red';
+    }
+  }
+
+  refresh();
+  setInterval(refresh, 3000);
 </script>
 </body>
 </html>
