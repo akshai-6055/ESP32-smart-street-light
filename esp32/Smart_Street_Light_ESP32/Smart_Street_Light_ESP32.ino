@@ -12,7 +12,7 @@ const char* password = "qfvq1983";
 // Example: "https://your-service-name.onrender.com/api/readings"
 // If testing locally on your PC, use your local IP with HTTP:
 // Example: "http://192.168.40.165:3000/api/readings"
-const char* serverUrl = "https://esp32-smart-street-light.onrender.com/api/readings";
+const char* serverUrl = "https://esp32-smart-street-light.onrender.com;
 const char* deviceId = "esp32_street_01";
 
 // Telemetry interval (milliseconds)
