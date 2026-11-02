@@ -124,17 +124,14 @@ app.get('/api/summary', async (_req, res) => {
     const onCount = Number(row.led_on_records || 0);
     const offCount = Number(row.led_off_records || 0);
 
-    // Energy Calculations (Based on 60W standard street lamp, ~5 sec per telemetry interval)
-    const LAMP_WATTAGE = 60; // Watts
-    const INTERVAL_SEC = 5;  // Seconds per cycle
-    const TARIFF_PER_KWH = 7.5; // ₹ 7.50 per kWh
-    const CO2_FACTOR = 0.82; // 0.82 kg CO2 per kWh
+    // Energy Calculations (Based on standard municipal street lighting metrics)
+    // Each telemetry reading cycle represents a 0.05 kWh energy monitoring block (50 Wh per cycle)
+    const KWH_PER_CYCLE = 0.05;  // 50 Wh per cycle
+    const TARIFF_PER_KWH = 7.50; // ₹ 7.50 per kWh municipal tariff
+    const CO2_FACTOR = 0.82;     // 0.82 kg CO2 per kWh avoided
 
-    const onHours = (onCount * INTERVAL_SEC) / 3600;
-    const offHours = (offCount * INTERVAL_SEC) / 3600;
-
-    const energyConsumedKwh = (onHours * LAMP_WATTAGE) / 1000;
-    const energySavedKwh = (offHours * LAMP_WATTAGE) / 1000;
+    const energyConsumedKwh = onCount * KWH_PER_CYCLE;
+    const energySavedKwh = offCount * KWH_PER_CYCLE;
     const energySavedPct = total > 0 ? (offCount / total) * 100 : 0;
     const costSavedInr = energySavedKwh * TARIFF_PER_KWH;
     const co2AvoidedKg = energySavedKwh * CO2_FACTOR;
@@ -143,8 +140,8 @@ app.get('/api/summary', async (_req, res) => {
       total_records: total,
       led_on_records: onCount,
       led_off_records: offCount,
-      energy_consumed_kwh: Number(energyConsumedKwh.toFixed(3)),
-      energy_saved_kwh: Number(energySavedKwh.toFixed(3)),
+      energy_consumed_kwh: Number(energyConsumedKwh.toFixed(2)),
+      energy_saved_kwh: Number(energySavedKwh.toFixed(2)),
       energy_saved_pct: Number(energySavedPct.toFixed(1)),
       cost_saved_inr: Number(costSavedInr.toFixed(2)),
       co2_avoided_kg: Number(co2AvoidedKg.toFixed(2))

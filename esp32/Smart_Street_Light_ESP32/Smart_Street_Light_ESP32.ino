@@ -75,14 +75,15 @@ void sendTelemetry() {
   Serial.println("[Cloud] Sending payload: " + payload);
 
   HTTPClient http;
+  WiFiClientSecure secureClient;
+  WiFiClient plainClient;
+
   bool isHttps = endpointUrl.startsWith("https://");
 
   if (isHttps) {
-    WiFiClientSecure secureClient;
     secureClient.setInsecure(); // Skip certificate verification for cloud endpoints
     http.begin(secureClient, endpointUrl);
   } else {
-    WiFiClient plainClient;
     http.begin(plainClient, endpointUrl);
   }
 
